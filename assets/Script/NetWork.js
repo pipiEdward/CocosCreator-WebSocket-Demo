@@ -14,13 +14,13 @@ let Network = cc.Class({
     },
 
     initNetwork() {
-        if(this.isInit){
+        if (this.isInit) {
             cc.log('Network is already inited...');
             return;
         }
         cc.log('Network initSocket...');
-        let host = "ws://localhost:3000";
-         //let host = "ws://47.104.15.140:3000"
+        //let host = "ws://localhost:3000";
+        let host = "ws://47.104.15.140:3000"
         this.socket = new WebSocket(host);
         this.socket.onopen = (evt) => {
             cc.log('Network onopen...');
@@ -29,9 +29,9 @@ let Network = cc.Class({
         }
 
         this.socket.onmessage = (evt) => {
-             let msg = evt.data;
-            cc.log('Network onmessage:'+evt.data);
-             let dataObj = JSON.parse(msg);
+            let msg = evt.data;
+            cc.log('Network onmessage:' + evt.data);
+            let dataObj = JSON.parse(msg);
             this.appandeMsg(dataObj);
         }
 
@@ -50,7 +50,7 @@ let Network = cc.Class({
     send(data) {
         if (!this.isInit) cc.log('Network is not inited...');
         else if (this.socket.readyState == WebSocket.OPEN) {
-             let tdata = JSON.stringify(data);
+            let tdata = JSON.stringify(data);
             cc.log('Network send:' + tdata);
             this.socket.send(tdata);
         } else cc.log('Network WebSocket readState:' + this.socket.readyState);
