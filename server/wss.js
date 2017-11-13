@@ -1,6 +1,7 @@
-'use strict'
+﻿'use strict'
 
 const webSocketServer = require('ws').Server;
+let wss = null;
 
 function hook(ws, _open, _message, _close, _error) {
 	ws.on('open', _open);
@@ -11,9 +12,17 @@ function hook(ws, _open, _message, _close, _error) {
 
 exports.start = ()=>{
 	console.log('ws start');
-	let wss = new webSocketServer({port:3000});
+	wss = new webSocketServer({port:3000});
 	wss.on('connection',(ws)=>{
 		console.log('client connected');
+		//在线人数
+	
+		let _msg = {f:'online',msg:wss.clients.size};
+	
+		//console.log(wss.clients.size);
+	
+		ws.send(stringifyJson(_msg));
+
 		hook(ws,
 				onOpen.bind(ws),
 				onMessage.bind(ws),
@@ -24,6 +33,7 @@ exports.start = ()=>{
 
 function onOpen(event){
 	console.log('open');
+
 };
 
 function onMessage(event){
@@ -34,6 +44,9 @@ function onMessage(event){
 		switch(msg.f){
 			case 'login':
 				onLogin.call(self,msg);
+				break;
+			case 'quit':
+				onQuit.call(self,msg);
 				break;
 			default:
 				break;
@@ -51,15 +64,35 @@ function onError(event){
 	console.log('onError');
 };
 
+//广播  
+function broadcast(msg) {  
+    // console.log(ws);  
+    wss.clients.forEach(function(client) {  
+	client.send(stringifyJson(msg));
+    });  
+};  
+
+
 //登录
 function onLogin(msg){
 	console.log('onLogin');
 	if(msg.msg){
-		let _msg = {f:'login',msg:'user '+msg.msg+' login success'};
+		let clientId = Date.parse(new Date())/1000;
+	
+		let _msg = {f:'login',msg:[msg.msg,clientId]};
 		this.send(stringifyJson(_msg));
+		broadcast({f:'join',msg:msg.msg});
 	}
+};
 
-}
+//退出
+function onQuit(msg){
+	console.log('onQuit');
+	if(msg.msg){
+		broadcast({f:'quit',msg:msg.msg});
+	}
+	this.close();
+};
 
 //字符串转json
 function parseJson(s){

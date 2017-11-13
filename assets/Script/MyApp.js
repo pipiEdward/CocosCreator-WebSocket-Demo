@@ -21,11 +21,11 @@ cc.Class({
     },
 
     login() {
-        if (this.editor.string = '') {
+        if (this.editbox.string == '') {
             alert('请输入昵称');
             return;
         }
-        Network.send({ f: 'login', msg: this.editor.string });
+        Network.send({ f: 'login', msg: this.editbox.string });
     },
 
     close() {

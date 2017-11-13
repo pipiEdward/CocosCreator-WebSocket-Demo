@@ -48,7 +48,7 @@ let Network = cc.Class({
 
     //发送消息给服务器
     send(data) {
-        if (!this.isInit) cc.log('Network is not inited...');
+        if (!this.isInit) alert('Network is not inited...');
         else if (this.socket.readyState == WebSocket.OPEN) {
             let tdata = JSON.stringify(data);
             cc.log('Network send:' + tdata);
