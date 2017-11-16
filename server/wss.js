@@ -10,105 +10,136 @@ function hook(ws, _open, _message, _close, _error) {
 	ws.on('error', _error);
 };
 
-exports.start = ()=>{
+exports.start = () => {
 	console.log('ws start');
-	wss = new webSocketServer({port:3000});
-	wss.on('connection',(ws)=>{
+	wss = new webSocketServer({ port: 3000 });
+	wss.on('connection', (ws) => {
 		console.log('client connected');
-		//在线人数
-	
-		let _msg = {f:'online',msg:wss.clients.size};
-	
 		//console.log(wss.clients.size);
-	
-		ws.send(stringifyJson(_msg));
-
 		hook(ws,
-				onOpen.bind(ws),
-				onMessage.bind(ws),
-				onClose.bind(ws),
-				onError.bind(ws));
+			onOpen.bind(ws),
+			onMessage.bind(ws),
+			onClose.bind(ws),
+			onError.bind(ws));
 	});
 };
 
-function onOpen(event){
+function onOpen(event) {
 	console.log('open');
 
 };
 
-function onMessage(event){
+function onMessage(event) {
 	let self = this;
 	let msg = parseJson(event);
 	console.log(msg);
-	if(msg&&msg.f){
-		switch(msg.f){
+	if (msg && msg.f) {
+		switch (msg.f) {
 			case 'login':
-				onLogin.call(self,msg);
+				onLogin.call(self, msg);
 				break;
-			case 'quit':
-				onQuit.call(self,msg);
-				break;
+			case 'send':
+				onSend.call(self, msg);
 			default:
 				break;
 		}
-	}else{
+	} else {
 		console.log('bad package');
 	}
 };
 
-function onClose(event){
+function onClose(event) {
+	console.log(wss.clients.size);
+	//发送广播
+	broadcast({
+		f: 'quit',
+		msg: {
+			userName: this.userName,
+			userNum: wss.clients.size,
+		}
+	});
 	console.log('onClose');
 };
 
-function onError(event){
+function onError(event) {
 	console.log('onError');
 };
 
 //广播  
-function broadcast(msg) {  
-    // console.log(ws);  
-    wss.clients.forEach(function(client) {  
-	client.send(stringifyJson(msg));
-    });  
-};  
+function broadcast(msg) {
+	// console.log(ws);  
+	wss.clients.forEach(function (client) {
+		client.send(stringifyJson(msg));
+	});
+};
 
 
 //登录
-function onLogin(msg){
+function onLogin(msg) {
 	console.log('onLogin');
-	if(msg.msg){
-		let clientId = Date.parse(new Date())/1000;
-	
-		let _msg = {f:'login',msg:[msg.msg,clientId]};
+	if (msg.msg) {
+		let clientId = Date.parse(new Date()) / 1000;
+		let name = msg.msg;
+		let _msg = { f: 'login', msg: [name, clientId] };
 		this.send(stringifyJson(_msg));
-		broadcast({f:'join',msg:msg.msg});
+		//在线人数
+		let userNum = wss.clients.size;
+		broadcast({
+			f: 'join', msg: {
+				userName: name,
+				userNum: userNum,
+			}
+		});
+		this.userName = name;//记录该sever的名字
 	}
 };
 
-//退出
-function onQuit(msg){
-	console.log('onQuit');
-	if(msg.msg){
-		broadcast({f:'quit',msg:msg.msg});
+//消息
+function onSend(msg) {
+	console.log('onSend');
+	if (msg.msg) {
+		let userName = this.userName;
+		let time = parseTime(new Date());
+		let _msg = { f: 'sendSuccess', msg: '发送成功' };
+		this.send(stringifyJson(_msg));
+
+		broadcast({
+			f: 'send',
+			msg: {
+				userName: userName,
+				time: time,
+				info: msg.msg,
+			}
+		});
 	}
-	this.close();
 };
+
+function parseTime(value) {
+	var hour = value.getHours();
+	var minute = value.getMinutes();
+	var second = value.getSeconds();
+	var hourStr = hour < 10 ? '0' + hour : hour;
+	var minuteStr = minute < 10 ? '0' + minute : minute;
+	var secondStr = second < 10 ? '0' + second : second;
+	return hourStr + ':' + minuteStr + ':' + secondStr;
+};
+
 
 //字符串转json
-function parseJson(s){
-	try{
+function parseJson(s) {
+	try {
 		return JSON.parse(s);
-	}catch(e){}
+	} catch (e) { }
 };
 
 //json转字符串
-function stringifyJson(j){
-	try{
+function stringifyJson(j) {
+	try {
 		return JSON.stringify(j);
-	}catch(e){}
+	} catch (e) { }
 };
 
 //检测变量是否存在
-function checkExist(obj){
-	return typeof obj!= 'undefined';
+function checkExist(obj) {
+	return typeof obj != 'undefined';
 };

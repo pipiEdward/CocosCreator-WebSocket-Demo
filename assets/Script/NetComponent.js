@@ -1,16 +1,20 @@
 //网络组件
-let  NetworkComponent = cc.Class({
+let NetworkComponent = cc.Class({
     extends: cc.Component,
 
     properties: {
     },
     onLoad: function () {
+
+    },
+
+    onEnable() {
         NetTarget.on('net', this.getNetData.bind(this));
         NetTarget.on('netstart', this.netStart.bind(this));
         NetTarget.on('netclose', this.netClose.bind(this));
     },
-    onDestroy: function () {
-        cc.log('destroy');
+
+    onDisable() {
         NetTarget.off('net', this.getNetData.bind(this));
         NetTarget.off('netstart', this.netStart.bind(this));
         NetTarget.off('netclose', this.netClose.bind(this));
